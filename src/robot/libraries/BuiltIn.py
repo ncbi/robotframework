@@ -2644,6 +2644,39 @@ class _Misc:
         except DataError, err:
             raise RuntimeError(unicode(err))
 
+    def on(self, name):
+        """Sets the preferred library for disambiguating keywords.
+        Example:
+        *** Settings ***
+        Library A
+        Library B
+        # Libraries A and B both define "My Keyword 1" and "My Keyword 2".
+
+        *** Test Cases ***
+        My Test
+            On A
+            My Keyword 1
+            My Keyword 2
+        """
+        self._context.namespace.preferred_library = name
+
+    def off(self):
+        """Unsets the preferred library for disambiguating keywords.
+        Example:
+        *** Settings ***
+        Library A
+        Library B
+        # Libraries A and B both define "My Keyword 1" and "My Keyword 2".
+
+        *** Test Cases ***
+        My Test
+            On A
+            My Keyword 1
+            My Keyword 2
+            Off
+        """
+        self._context.namespace.preferred_library = None
+
 
 class BuiltIn(_Verify, _Converter, _Variables, _RunKeyword, _Control, _Misc):
     """An always available standard library with often needed keywords.

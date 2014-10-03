@@ -42,6 +42,9 @@ class Namespace:
                              'OperatingSystem': 'DeprecatedOperatingSystem'}
     _library_import_by_path_endings = ('.py', '.java', '.class', '/', os.sep)
 
+    # Tells _get_handler to disambiguate keywords defined in two libraries
+    preferred_library = None
+
     def __init__(self, suite, variables, parent_variables, user_keywords,
                  imports):
         LOGGER.info("Initializing namespace for test suite '%s'" % suite.longname)
@@ -208,7 +211,7 @@ class Namespace:
 
     def get_handler(self, name):
         try:
-            handler = self._kw_store.get_handler(name)
+            handler = self._kw_store.get_handler(name, preferred_library=self.preferred_library)
         except DataError, err:
             handler = UserErrorHandler(name, unicode(err))
         self._replace_variables_from_user_handlers(handler)
@@ -233,8 +236,8 @@ class KeywordStore(object):
         except KeyError:
             raise DataError("No library with name '%s' found." % name)
 
-    def get_handler(self, name):
-        handler = self._get_handler(name)
+    def get_handler(self, name, preferred_library=None):
+        handler = self._get_handler(name, preferred_library=preferred_library)
         if handler is None:
             self._raise_no_keyword_found(name)
         return handler
@@ -251,12 +254,15 @@ class KeywordStore(object):
                 msg += "\n    %s" % rec
         raise DataError(msg)
 
-    def _get_handler(self, name):
+    def _get_handler(self, name, preferred_library=None):
         handler = None
         if not name:
             raise DataError('Keyword name cannot be empty.')
         if not isinstance(name, basestring):
             raise DataError('Keyword name must be a string.')
+        if preferred_library is not None:
+            # If we received a preferred library for disambiguating keywords
+            handler = self._get_explicit_handler("%s.%s" % (preferred_library, name))
         if '.' in name:
             handler = self._get_explicit_handler(name)
         if not handler:
